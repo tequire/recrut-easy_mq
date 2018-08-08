@@ -55,7 +55,9 @@ class AsyncQueue(BaseQueue):
         channel = await self._get_channel()
         async for message in await channel.declare_queue(self.queue_name):
             with message.process():
-                yield message
+                method_frame, header_frame, body = message
+                channel.basic_ack(method_frame.delivery_tag)
+                yield method_frame, header_frame, body
 
 
 class Queue(BaseQueue):
@@ -102,4 +104,5 @@ class Queue(BaseQueue):
     def receive(self):
         print('Ready to consume!')
         for message in self._get_channel().consume(self.queue_name):
+            message.ack()
             yield message
