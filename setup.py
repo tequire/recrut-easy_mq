@@ -5,10 +5,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="easy_mq",
-    version="0.0.9",
+    version="0.1.0",
     author="Halvor Bø",
     author_email="halvor@recrut.no",
-    description="Currently internal. Package to simplefy the using pika.",
+    description="Library for using RabbitMQ with python (async/sync).",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/recrut-as/easy_mq",
