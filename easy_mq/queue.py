@@ -58,6 +58,10 @@ class AsyncQueue(BaseQueue):
                 message.ack()
                 yield message
 
+    async def receive_one(self):
+        return await self.receive().__anext__()
+
+
 
 
 class Queue(BaseQueue):
@@ -96,6 +100,7 @@ class Queue(BaseQueue):
         '''
         channel = self._get_channel()
         channel.basic_publish(
+            exchange='',
             routing_key=self.queue_name,
             body=message.encode()
         )
@@ -108,3 +113,8 @@ class Queue(BaseQueue):
             method_frame, header_frame, body = message
             channel.basic_ack(method_frame.delivery_tag)
             yield method_frame, header_frame, body
+
+
+    def receive_one(self):
+        return next(self.receive())
+
