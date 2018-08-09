@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="easy_mq",
-    version="0.0.8",
+    version="0.0.9",
     author="Halvor Bø",
     author_email="halvor@recrut.no",
     description="Currently internal. Package to simplefy the using pika.",
