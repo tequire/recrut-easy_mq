@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="easy_mq",
-    version="0.0.3",
+    version="0.0.8",
     author="Halvor Bø",
     author_email="halvor@recrut.no",
     description="Currently internal. Package to simplefy the using pika.",
@@ -13,6 +13,10 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/recrut-as/easy_mq",
     packages=setuptools.find_packages(),
+    install_requires=[
+        'pika',
+        'aio_pika',
+    ],
     classifiers=(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

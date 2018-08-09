@@ -1,0 +1,21 @@
+version: '3.2'
+
+services:
+
+  rabbitmq:
+    image: rabbitmq
+ 
+  runner:
+    image: sanic
+    build:
+      context: .
+    volumes:
+      - ./:/code
+    command:
+      - wait_for_rabbitmq
+    depends_on:
+      - rabbitmq
+
+volumes:
+  db:
+

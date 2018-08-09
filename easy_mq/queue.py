@@ -55,9 +55,9 @@ class AsyncQueue(BaseQueue):
         channel = await self._get_channel()
         async for message in await channel.declare_queue(self.queue_name):
             with message.process():
-                method_frame, header_frame, body = message
-                channel.basic_ack(method_frame.delivery_tag)
-                yield method_frame, header_frame, body
+                message.ack()
+                yield message
+
 
 
 class Queue(BaseQueue):
@@ -72,7 +72,7 @@ class Queue(BaseQueue):
 
 
     def _get_connection(self):
-        return pika.BlockingConnection(ConnectionParameters(*self.__class__.connection_args, **self.__class__.connection_kwargs))
+        return pika.BlockingConnection(pika.connection.URLParameters(*self.__class__.connection_args, **self.__class__.connection_kwargs))
 
     def _get_channel(self):
         connection = self._get_connection()
@@ -103,6 +103,8 @@ class Queue(BaseQueue):
 
     def receive(self):
         print('Ready to consume!')
-        for message in self._get_channel().consume(self.queue_name):
-            message.ack()
-            yield message
+        channel = self._get_channel()
+        for message in channel.consume(self.queue_name):
+            method_frame, header_frame, body = message
+            channel.basic_ack(method_frame.delivery_tag)
+            yield method_frame, header_frame, body
