@@ -86,8 +86,7 @@ class Queue(BaseQueue):
     def _get_connection(self):
         return pika.BlockingConnection(pika.connection.URLParameters(*self.__class__.connection_args, **self.__class__.connection_kwargs))
 
-    def _get_channel(self):
-        connection = self._get_connection()
+    def _get_channel(self, connection):
         channel = connection.channel()
         if not self.initialized:
             channel.queue_declare(self.queue_name)
@@ -107,22 +106,31 @@ class Queue(BaseQueue):
         '''
         Should put a message in the queue
         '''
-        channel = self._get_channel()
-        channel.basic_publish(
-            exchange='',
-            routing_key=self.queue_name,
-            body=message.encode()
-        )
-        channel.close()
+        connection = self._get_connection()
+        channel = self._get_channel(connection)
+        try:
+            channel.basic_publish(
+                exchange='',
+                routing_key=self.queue_name,
+                body=message.encode()
+            )
+        finally:
+            channel.close()
+            connection.close()
 
     def receive(self):
         print('Ready to consume!')
-        channel = self._get_channel()
-        for message in channel.consume(self.queue_name):
-            method_frame, header_frame, body = message
-            channel.basic_ack(method_frame.delivery_tag)
-            yield method_frame, header_frame, body
+        connection = self._get_connection()
+        channel = self._get_channel(connection)
+        try:
+            for message in channel.consume(self.queue_name):
+                method_frame, header_frame, body = message
+                channel.basic_ack(method_frame.delivery_tag)
+                yield method_frame, header_frame, body
 
+        finally:
+            channel.close()
+            connection.close()
 
     def receive_one(self):
         return next(self.receive())
