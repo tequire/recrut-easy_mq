@@ -1,4 +1,8 @@
-import aio_pika 
+
+import asyncio
+import logging
+
+import aio_pika
 import pika
 
 from pika.connection import ConnectionParameters
@@ -13,7 +17,7 @@ class AsyncQueue(BaseQueue):
     '''
 
     @classmethod
-    def connect(cls, *args, **kwargs):
+    def connect(cls, *args, concurrent=20, **kwargs):
         '''
         Should take in connection parameters 
         '''
@@ -23,13 +27,13 @@ class AsyncQueue(BaseQueue):
     async def _get_connection(self):
         return await aio_pika.connect_robust(*self.__class__.connection_args, **self.__class__.connection_kwargs)
 
-    async def _get_channel(self):
-        connection = await self._get_connection()
+    async def _get_channel(self, connection):
         channel = await connection.channel()
         if not self.initalized:
             await channel.declare_queue(self.queue_name)
             self.initalized = True
         return channel
+
 
     def __init__(self, queue_name):
         '''
@@ -43,25 +47,29 @@ class AsyncQueue(BaseQueue):
         '''
         Should put a message in the queue
         '''
-        channel = await self._get_channel()
+        connection = await self._get_connection()
+        channel = await self._get_channel(connection)
         await channel.default_exchange.publish(
-            aio_pika.Message(
-                body=message.encode()
-            ),
+            aio_pika.Message(body=message.encode()),
             routing_key=self.queue_name
         )
+        await channel.close()
+        await connection.close()
+
 
     async def receive(self):
-        channel = await self._get_channel()
-        async for message in await channel.declare_queue(self.queue_name):
-            with message.process():
-                message.ack()
-                yield message
+        connection = await self._get_connection()
+        channel = await self._get_channel(connection)
+        try:
+            async for message in await channel.declare_queue(self.queue_name):
+                with message.process():
+                    yield message
+        finally:
+            await channel.close()
+            await connection.close()
 
     async def receive_one(self):
         return await self.receive().__anext__()
-
-
 
 
 class Queue(BaseQueue):
@@ -81,17 +89,18 @@ class Queue(BaseQueue):
     def _get_channel(self):
         connection = self._get_connection()
         channel = connection.channel()
-        if not self.initalized:
+        if not self.initialized:
             channel.queue_declare(self.queue_name)
-            self.initalized = True
+            self.initialized = True
         return channel
+
 
     def __init__(self, queue_name):
         '''
         Should create a queue
         '''
         self.queue_name = queue_name
-        self.initalized = False
+        self.initialized = False
 
 
     def put(self, message):
@@ -104,7 +113,7 @@ class Queue(BaseQueue):
             routing_key=self.queue_name,
             body=message.encode()
         )
-        
+        channel.close()
 
     def receive(self):
         print('Ready to consume!')

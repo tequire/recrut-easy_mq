@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="easy_mq",
-    version="0.1.0",
+    version="0.1.1",
     author="Halvor Bø",
     author_email="halvor@recrut.no",
     description="Library for using RabbitMQ with python (async/sync).",

@@ -32,9 +32,12 @@ def test_async_queue():
         AsyncQueue.connect(RABBITMQ_URL)
 
         q = AsyncQueue(QUEUE)
+
         await q.put(STRING.decode('utf-8'))
 
         eq_((await q.receive_one()).body, STRING)
+
+
     
     asyncio.run(test())
 
